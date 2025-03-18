@@ -7,6 +7,11 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# Set a CRAN mirror
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+# Now install the package
+install.packages("car")
 ```
 
 ```

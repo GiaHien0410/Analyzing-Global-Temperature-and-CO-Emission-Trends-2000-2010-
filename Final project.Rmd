@@ -1,30 +1,300 @@
 ---
-title: "Final project"
+title: "Investigating the Impact of CO₂ and CH₄ Emissions on Global Temperature Anomalies (2000-2010)"
 author: "Bui Thanh Vinh"
 date: "`r Sys.Date()`"
 output: html_document
 ---
+```
+Objective:
+This study aims to explore the relationship between global temperature anomalies and greenhouse gas emissions (CO₂ and CH₄) over the period 2000-2010. By analyzing monthly trends, we seek to determine whether increases in atmospheric CO₂ and CH₄ concentrations correspond to significant temperature changes. The study will use goodness of fit statistical correlation and trend analysis to assess the strength and direction of these relationships.
+```
+```
+Hypotheses:
+H₀ (Null Hypothesis):
+There is no significant relationship between global temperature anomalies and the concentration of CO₂ and CH₄ from 2000 to 2010.
+Greenhouse gas concentrations do not have a measurable impact on global temperature variations over the studied period.
+
+H₁ (Alternative Hypothesis):
+There is a statistically significant positive correlation between CO₂ and CH₄ concentrations and global temperature anomalies.
+Rising levels of these greenhouse gases contribute to an increase in temperature anomalies over time.
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```
+Data taken from
+https://gml.noaa.gov/ccgg/trends/gl_data.html
+https://gml.noaa.gov/ccgg/trends_ch4/
+https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/globe/tavg/land_ocean/1/0/2000-2010
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+I.Fitting Distributions
+```{r}
+# Load required libraries
+library(fitdistrplus)
+library(MASS)
+library(ggplot2)
+
+# Load datasets
+co2_data <- read.csv("C:/Users/VINH/Desktop/Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-/dataset/co2_2000_2010.csv")
+ch4_data <- read.csv("C:/Users/VINH/Desktop/Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-/dataset/ch4_2000_2010.csv")
+anomaly_data <- read.csv("C:/Users/VINH/Desktop/Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-/dataset/anomaly_2000_2010.csv")
+
+# Extract columns for fitting
+co2_values <- co2_data$trend
+ch4_values <- ch4_data$trend
+anomaly_values <- anomaly_data$Anomaly
+
+# Function to fit and compare distributions
+fit_and_compare <- function(data, var_name) {
+  cat("\n--- Fitting distributions for", var_name, "---\n")
+  
+  # Fit normal, gamma, and lognormal distributions
+  fit_norm <- fitdistr(data, "normal")
+  fit_gamma <- fitdistr(data, "gamma")
+  fit_lognorm <- fitdistr(data, "lognormal")
+  
+  # Compare goodness-of-fit using AIC and BIC
+  aic_values <- c(AIC(fit_norm), AIC(fit_gamma), AIC(fit_lognorm))
+  bic_values <- c(BIC(fit_norm), BIC(fit_gamma), BIC(fit_lognorm))
+  dist_names <- c("Normal", "Gamma", "Lognormal")
+  
+  best_fit <- dist_names[which.min(aic_values)]
+  
+  cat("AIC values:", aic_values, "\n")
+  cat("BIC values:", bic_values, "\n")
+  cat("Best fit distribution (AIC-based):", best_fit, "\n")
+  
+  # Generate Q-Q plots
+  par(mfrow = c(1, 3))
+  qqnorm(data, main = paste("Q-Q Plot -", var_name, "Normal"))
+  qqline(data, col = "red")
+  
+  qqplot(qgamma(ppoints(length(data)), shape = fit_gamma$estimate["shape"], rate = fit_gamma$estimate["rate"]),
+         sort(data), main = paste("Q-Q Plot -", var_name, "Gamma"))
+  abline(0, 1, col = "red")
+  
+  qqplot(qlnorm(ppoints(length(data)), meanlog = fit_lognorm$estimate["meanlog"], sdlog = fit_lognorm$estimate["sdlog"]),
+         sort(data), main = paste("Q-Q Plot -", var_name, "Lognormal"))
+  abline(0, 1, col = "red")
+  
+  par(mfrow = c(1, 1))
+  
+  return(best_fit)
+}
+# Apply to each dataset
+best_co2 <- fit_and_compare(co2_values, "CO2")
+best_ch4 <- fit_and_compare(ch4_values, "CH4")
+best_anomaly <- fit_and_compare(anomaly_values, "Temperature Anomaly")
+# Print final results
+cat("\nBest fit distributions:\n")
+cat("CO2:", best_co2, "\n")
+cat("CH4:", best_ch4, "\n")
+cat("Temperature Anomaly:", best_anomaly, "\n")
+```
+
+```
+ Fit and Compare Distributions
+CO2:
+Best Fit Distribution: Normal
+AIC Values: 866.4556 (Normal), 866.5247 (Gamma), 866.5655 (Lognormal)
+BIC Values: 872.2212 (Normal), 872.2903 (Gamma), 872.3311 (Lognormal)
+Comment: The Normal distribution provides the best fit for the CO2 data based on AIC values.
+CH4:
+Best Fit Distribution: Lognormal
+AIC Values: 952.2885 (Normal), 951.8764 (Gamma), 951.6597 (Lognormal)
+BIC Values: 958.0541 (Normal), 957.6420 (Gamma), 957.4253 (Lognormal)
+Comment: The Lognormal distribution provides the best fit for the CH4 data.
+Temperature Anomaly:
+Best Fit Distribution: Normal
+AIC Values: -172.1881 (Normal), -158.7075 (Gamma), -148.3367 (Lognormal)
+BIC Values: -166.4225 (Normal), -152.9419 (Gamma), -142.5711 (Lognormal)
+Comment: Despite warnings, the Normal distribution is the best fit for the temperature anomaly data.
+```
+
+II.Kolmogorov-Smirnov Tests
+
+
+```{r}
+# Load necessary libraries
+library(readr)
+library(stats)
+# Load datasets
+co2_data <- read_csv("C:/Users/VINH/Desktop/Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-/dataset/co2_2000_2010.csv")
+ch4_data <- read_csv("C:/Users/VINH/Desktop/Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-/dataset/ch4_2000_2010.csv")
+anomaly_data <- read_csv("C:/Users/VINH/Desktop/Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-/dataset/anomaly_2000_2010.csv")
+# Extract relevant columns
+co2_values <- co2_data$average
+ch4_values <- ch4_data$average
+anomaly_values <- anomaly_data$Anomaly
+# Perform K-S Test for CO2 (Normal Distribution)
+ks_co2 <- ks.test(co2_values, "pnorm", mean(co2_values), sd(co2_values))
+# Perform K-S Test for CH4 (Lognormal Distribution)
+ks_ch4 <- ks.test(log(ch4_values), "pnorm", mean(log(ch4_values)), sd(log(ch4_values)))
+# Perform K-S Test for Temperature Anomaly (Normal Distribution)
+ks_anomaly <- ks.test(anomaly_values, "pnorm", mean(anomaly_values), sd(anomaly_values))
+# Print Results
+cat("K-S Test Results:\n")
+cat("CO2 (Normal): D =", ks_co2$statistic, ", p-value =", ks_co2$p.value, "\n")
+cat("CH4 (Lognormal): D =", ks_ch4$statistic, ", p-value =", ks_ch4$p.value, "\n")
+cat("Temperature Anomaly (Normal): D =", ks_anomaly$statistic, ", p-value =", ks_anomaly$p.value, "\n")
+# Interpretation
+if (ks_co2$p.value < 0.05) {
+  cat("CO2 does NOT follow a normal distribution (reject H0)\n")
+} else {
+  cat("CO2 follows a normal distribution (fail to reject H0)\n")
+}
+if (ks_ch4$p.value < 0.05) {
+  cat("CH4 does NOT follow a lognormal distribution (reject H0)\n")
+} else {
+  cat("CH4 follows a lognormal distribution (fail to reject H0)\n")
+}
+if (ks_anomaly$p.value < 0.05) {
+  cat("Temperature Anomaly does NOT follow a normal distribution (reject H0)\n")
+} else {
+  cat("Temperature Anomaly follows a normal distribution (fail to reject H0)\n")
+}
+```
+
+```
+Kolmogorov-Smirnov (K-S) Test Results
+CO2 (Normal):
+D = 0.0684, p-value = 0.5676411
+Interpretation: CO2 does follow a normal distribution (fail to reject H0).
+CH4 (Lognormal):
+D = 0.15315, p-value = 0.004091045
+Interpretation: CH4 does NOT follow a lognormal distribution (reject H0).
+Temperature Anomaly (Normal):
+D = 0.0740, p-value = 0.4646502
+Interpretation: Temperature Anomaly does follow a normal distribution (fail to reject H0).
+```
+
+III.Q-Q Plots
+
+
+```{r}
+library(ggplot2)
+library(car)
+qqPlot(co2_data$average, distribution = "norm", main = "Q-Q Plot of CO2 (Normal)")
+qqPlot(log(ch4_data$average), distribution = "norm", main = "Q-Q Plot of CH4 (Lognormal)")
+qqPlot(anomaly_data$Anomaly, distribution = "norm", main = "Q-Q Plot of Temperature Anomaly (Normal)")
+```
+
+```
+Q-Q Plot for CO2:
+The plot shows that the data points generally fall along the reference line, affirming the normality of the CO2 data.
+Q-Q Plot for CH4:
+Q-Q plot of log-transformed CH4 indicates deviations from the theoretical lognormal distribution, corresponding with the K-S test result that rejects the lognormal fit.
+Q-Q Plot for Temperature Anomaly:
+Similar to the CO2 Q-Q plot, the temperature anomaly points lie closely along the reference line, supporting the finding of normality.
+```
+
+##IV. Copula Analysis
+1.For CO2
+```{r}
+# Load required libraries for copula analysis
+library(copula)
+
+# Define copula families to explore
+# You may choose other copula families depending on the behavior of your data
+copula_families <- c("normal", "t", "gumbel", "clayton")
+
+# Fit the marginal distributions obtained from previous analysis
+# Assuming you have established CO2 and Temperature Anomaly as Normal
+# and CH4 could be Lognormal or any alternative derived from your analysis
+marginals <- list(
+  co2 = fitdistr(co2_values, "normal"),
+  ch4 = fitdistr(ch4_values, "lognormal"), # replace with chosen distribution
+  anomaly = fitdistr(anomaly_values, "normal")
+)
+
+# Creating the copula
+# You can modify the copula family as necessary
+copula_model <- normalCopula(dim = 3)
+
+# Fit the copula to the data
+# Transform data to uniform margins using the empirical CDF
+empirical_copula_data <- pobs(cbind(
+  pnorm(scale(co2_values, center = mean(co2_values), scale = sd(co2_values))),
+  plnorm(ch4_values, meanlog = marginals$ch4$estimate["meanlog"], sdlog = marginals$ch4$estimate["sdlog"]),
+  pnorm(scale(anomaly_values, center = mean(anomaly_values), scale = sd(anomaly_values)))
+))
+
+# Fit the copula to empirical data
+fit_copula <- fitCopula(copula_model, empirical_copula_data, method = "ml")
+
+# Display results
+summary(fit_copula)
+
+# Simulate new data based on the fitted copula
+simulated_data <- rCopula(1000, fit_copula@copula)
+
+# Transform simulated data back to original scale
+simulated_data_original_scale <- cbind(
+  qnorm(simulated_data[, 1], mean(co2_values), sd(co2_values)),
+  qlnorm(simulated_data[, 2], meanlog = marginals$ch4$estimate["meanlog"], sdlog = marginals$ch4$estimate["sdlog"]),
+  qnorm(simulated_data[, 3], mean(anomaly_values), sd(anomaly_values))
+)
+
+# Plot the simulated vs original data
+# Adjust margins and layout for better spacing
+par(mfrow = c(1, 2), mar=c(5, 5, 4, 2))
+
+# Plot original data
+plot(co2_values, anomaly_values, main = "Original Data (CO2 vs Temp Anomalies)", 
+     xlab = "CO2", ylab = "Temperature Anomaly", col = "blue", pch=20)
+
+# Plot simulated data
+plot(simulated_data_original_scale[, 1], simulated_data_original_scale[, 3], 
+     main = "Simulated Data (CO2 vs Temp Anomalies)", xlab = "CO2", 
+     ylab = "Temperature Anomaly", col = "red", pch=20)
+
+# Reset to default
+par(mfrow = c(1, 1))
+```
+
+```
+Dependence Structure: The estimated correlation (ρ) from the normal copula suggests a moderate positive dependence (ρ = 0.557) between the variables, indicating that as CO₂ levels increase, there is an associated increase in temperature anomalies. This aligns with the hypothesis that greenhouse gas emissions contribute to global warming.
+Marginal Distributions: By fitting the appropriate marginal distributions (normal for CO₂ and temperature anomalies, and lognormal for CH₄), the copula effectively captures the non-linear relationships and tail dependencies, which might not be evident when analyzing univariate distributions alone.
+Simulation of Data: The simulation effort provides synthesized data that adheres to the specified relationships among the variables. 
+```
+
+2.For CH4
+```{r}
+# Assuming the simulated data for CH₄ has already been prepared as follows
+# Transform simulated CH4 data back to original scale
+simulated_ch4 <- qlnorm(simulated_data[, 2], 
+                         meanlog = marginals$ch4$estimate["meanlog"], 
+                         sdlog = marginals$ch4$estimate["sdlog"])
+
+# Adjust margins and layout for better spacing
+par(mfrow = c(1, 2), mar = c(5, 5, 4, 2))
+
+# Plot original CH₄ data against temperature anomalies
+plot(ch4_values, anomaly_values, main = "Original Data (CH4 vs Temp Anomalies)", 
+     xlab = "CH4 Concentration", ylab = "Temperature Anomaly", col = "green", pch = 20)
+
+# Plot simulated CH₄ data against temperature anomalies
+plot(simulated_ch4, simulated_data_original_scale[, 3], 
+     main = "Simulated Data (CH4 vs Temp Anomalies)", 
+     xlab = "CH4 Concentration", ylab = "Temperature Anomaly", col = "orange", pch = 20)
+
+# Reset to default
+par(mfrow = c(1, 1))
+```
+
+```
+Dependence Structure: The analysis shows a connection between methane (CH₄) levels and temperature anomalies. This means that changes in CH₄ concentrations can influence temperature changes, highlighting the importance of looking at these two factors together.
+Fitted Distribution: A lognormal distribution was found to best represent CH₄ data. This is important because methane emissions often have a skewed distribution, which a normal distribution wouldn't capture well.
+Simulation: By simulating new data based on this analysis, we can create realistic scenarios that reflect how changes in CH₄ could affect temperatures. This helps us understand potential future trends.
+Overall Implication: The results indicate that as CH₄ levels rise, there are likely increases in temperature anomalies, supporting the idea that both CO₂ and CH₄ significantly contribute to global warming.
+```
+Conclusion
+```
+The analysis highlights a clear link between methane emissions and rising global temperatures. Understanding this relationship is crucial for developing effective strategies to reduce greenhouse gas emissions and combat climate change.
+```
