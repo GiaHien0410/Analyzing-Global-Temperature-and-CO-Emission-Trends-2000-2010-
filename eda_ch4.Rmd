@@ -1,0 +1,357 @@
+---
+title: "EDA CH4"
+output: html_document
+date: "2025-03-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+```
+Objective:
+To analyze the relationship between global CO₂ concentrations and global temperature anomalies from 2000 to 2010, identifying potential correlations and trends. The study aims to determine whether rising CO₂ levels correspond to an increase in global temperatures, providing insights into climate change patterns.
+
+Hypothesis:
+Null Hypothesis (H₀): There is no significant correlation between global CO₂ concentrations and global temperature anomalies from 2000 to 2010.
+Alternative Hypothesis (H₁): There is a significant positive correlation between global CO₂ concentrations and global temperature anomalies from 2000 to 2010, indicating that rising CO₂ levels contribute to temperature increases.
+```{r}
+df_anomaly = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\anomaly_2000_2010.csv")
+df_ch4 = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\ch4_2000_2010.csv")
+df_co2 = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\co2_2000_2010.csv")
+```
+
+```{r}
+head(df_anomaly)
+head(df_ch4)
+```
+
+```{r}
+colnames(df_ch4)
+```
+EDA:
+Step 1: Understand the Problem and the Data
+Step 2: Import and Inspect the Data
+Step 3: Handling Missing Values
+Step 4: Explore Data Characteristics
+Step 5: Perform Data Transformation
+Step 6: Visualize Data Relationships
+Step 7: Handling Outliers
+Step 8: Communicate Findings and Insights
+```{r}
+names(df_ch4)[names(df_ch4) == "average"] = "average_ch4"
+names(df_ch4)[names(df_ch4) == "trend"] = "trend_ch4"
+```
+Topic:
+Investigating the Impact of CO₂ and CH₄ Emissions on Global Temperature Anomalies (2000-2010)
+
+Objective:
+This study aims to explore the relationship between global temperature anomalies and greenhouse gas emissions (CO₂ and CH₄) over the period 2000-2010. By analyzing monthly trends, we seek to determine whether increases in atmospheric CO₂ and CH₄ concentrations correspond to significant temperature changes. The study will use statistical correlation and trend analysis to assess the strength and direction of these relationships.
+
+Hypotheses:
+H₀ (Null Hypothesis):
+
+There is no significant relationship between global temperature anomalies and the concentration of CO₂ and CH₄ from 2000 to 2010.
+Greenhouse gas concentrations do not have a measurable impact on global temperature variations over the studied period.
+H₁ (Alternative Hypothesis):
+
+There is a statistically significant positive correlation between CO₂ and CH₄ concentrations and global temperature anomalies.
+Rising levels of these greenhouse gases contribute to an increase in temperature anomalies over time.
+```{r}
+summary(df_ch4)
+```
+
+```{r}
+sum(is.na(df_ch4))
+```
+
+```{r}
+data_ch4 = merge(df_ch4, df_anomaly, by = c("Year", "Month"), all.x = TRUE)
+data_ch4 <- data_ch4[order(data_ch4$Year, data_ch4$Month), ]
+print(data_ch4, row.names = FALSE)
+```
+
+## Handling Missing Values
+
+```{r}
+cat("Dimension of data:", dim(data_ch4))
+cat("\nNumber of N/A values", sum(is.na(data_ch4)))
+```
+
+## Explore Data Characteristics
+
+```{r}
+num_col = c("average_ch4", "trend_ch4", "Anomaly")
+data_wo_date = data_ch4[, num_col]
+```
+
+```{r}
+# Summary statistics for all columns
+summary(data_ch4)
+```
+
+```{r}
+# Mean for each numeric column
+cat("\nMean for each numeric column\n")
+colMeans(data_ch4[, sapply(data_ch4, is.numeric)], na.rm = TRUE)
+
+# Standard deviation for each numeric column
+cat("\nStandard deviation for each numeric column\n")
+sapply(data_ch4[, sapply(data_ch4, is.numeric)], sd, na.rm = TRUE)
+
+# Median for each numeric column
+cat("\nMedian for each numeric column\n")
+sapply(data_ch4[, sapply(data_ch4, is.numeric)], median, na.rm = TRUE)
+
+# Min and max values
+cat("\nMin and Max of each numeric column\n")
+sapply(data_ch4[, sapply(data_ch4, is.numeric)], range, na.rm = TRUE)
+```
+```{r}
+cal_sum_stat = function(df){
+  num_col = c("average_ch4", "trend_ch4", "Anomaly")
+  data_wo_date = data_ch4[, num_col]
+  
+  # Apply function to each column
+  stats <- sapply(data_wo_date, function(col) {
+    c(Mean = mean(col, na.rm = TRUE), Median = median(col, na.rm = TRUE), Min = min(col, na.rm = TRUE),
+      Max = max(col, na.rm = TRUE), Quantiles = quantile(col, na.rm = TRUE),
+      Standard_Deviation = sd(col, na.rm = TRUE), Variance = var(col, na.rm = TRUE))
+  })
+  
+  return(as.data.frame(t(stats)))
+}
+
+result = cal_sum_stat(data_ch4)
+print(result)
+```
+ok 
+```{r}
+#data %>%
+#  group_by(Year) %>%
+#  summarise(
+#    mean_anomaly = mean(Anomaly, na.rm = TRUE),
+#    sd_anomaly = sd(Anomaly, na.rm = TRUE),
+#    min_anomaly = min(Anomaly, na.rm = TRUE),
+#    max_anomaly = max(Anomaly, na.rm = TRUE)
+#  )
+
+```
+
+## Visualize Data Relationships
+
+### Univariate Analysis
+
+```{r}
+data_ch4 %>%
+  group_by(Month) %>%
+  summarise(mean_anomaly = mean(Anomaly, na.rm=TRUE)) %>%
+  ggplot(aes(x=factor(Month), y=mean_anomaly)) +
+  geom_col(fill="lightblue") +
+  labs(title="Average Anomaly by Month", x="Month", y="Anomaly")
+
+```
+```{r}
+# List of numeric columns
+num_cols <- c("average_ch4", "trend_ch4", "Anomaly")
+
+# Loop through each column and generate a box plot
+for (col in num_cols) {
+  p <- ggplot(data_ch4, aes(y = .data[[col]])) +
+    geom_boxplot(fill = "blue", color = "black") +
+    labs(title = paste("Box Plot of", col),
+         y = col) +
+    theme_minimal()
+  
+  print(p)  # Display each plot separately
+}
+
+```
+```{r}
+# Loop through each column and generate a line plot
+for (col in num_cols) {
+  p <- ggplot(data_ch4, aes(x = Year + (Month - 1) / 12, y = .data[[col]])) +
+    geom_line(color = "blue", size = 1) +
+    labs(title = paste("Line Plot of", col, "Over Time"),
+         x = "Year",
+         y = col) +
+    theme_minimal()
+  
+  print(p)  # Display each plot separately
+}
+```
+```{r}
+# Function to create histogram with KDE for each numerical column
+plot_hist_kde <- function(df) {
+  numeric_cols <- names(df)[sapply(df, is.numeric)]  # Get numeric columns
+  
+  for (col in numeric_cols) {
+    p <- ggplot(df, aes(x = .data[[col]])) +
+      geom_histogram(aes(y = ..density..), bins = 30, fill = "blue", alpha = 0.5) +  # Histogram
+      geom_density(color = "red", size = 1.2) +  # KDE (Kernel Density Estimate)
+      labs(title = paste("Histogram & KDE of", col), x = col, y = "Density") +
+      theme_minimal()
+    
+    print(p)  # Print each plot separately
+  }
+}
+
+# Apply function to your dataset
+plot_hist_kde(data_wo_date)
+
+```
+
+### Bivariate Analysis
+
+```{r}
+# Create line plot
+ggplot(data_ch4, aes(x = Year + (Month - 1) / 12)) +  # Convert Year and Month into a continuous time axis
+  geom_line(aes(y = average_ch4, color = "Average CH4"), size = 1) +
+  geom_line(aes(y = trend_ch4, color = "Trend CH4"), size = 1) +
+  scale_color_manual(values = c("Average CH4" = "blue", "Trend CH4" = "red")) +
+  scale_x_continuous(breaks = seq(2000, 2010, 1)) +  # Ensure all years are displayed
+  labs(title = "CH4 Trend vs Average CH4 Over Time",
+       x = "Year",
+       y = "CH4 Levels",
+       color = "Legend") +
+  theme_minimal()
+
+```
+```{r}
+ggplot(data_ch4, aes(x = average_ch4, y = Anomaly)) +
+  geom_point(color = "blue", alpha = 0.6) +  # Scatter points
+  geom_smooth(method = "lm", color = "red", se = TRUE) +  # Regression line
+  labs(title = "Scatter Plot of CH4 vs Anomaly",
+       x = "Average CH4 Levels",
+       y = "Anomaly") +
+  theme_minimal()
+
+```
+```{r}
+ggplot(data_ch4, aes(x = average_ch4, y = Anomaly)) +
+  geom_hex(bins = 30) +  # Hexbin plot for density visualization
+  scale_fill_viridis_c() +  # Color scale for density
+  labs(title = "Hexbin Density Plot of CH4 vs Anomaly",
+       x = "Average CH4 Levels",
+       y = "Anomaly") +
+  theme_minimal()
+```
+```{r}
+ggplot(data_ch4, aes(x = cut(average_ch4, breaks = 5), y = Anomaly)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(title = "Box Plot of Anomaly Across CH4 Levels",
+       x = "CH4 Level Ranges",
+       y = "Anomaly") +
+  theme_minimal()
+```
+```{r}
+correlation <- cor(data_ch4$average_ch4, data_ch4$Anomaly, use = "complete.obs")
+print(correlation)  # Prints correlation coefficient
+```
+
+### Multivariate Analysis
+
+```{r}
+# creating correlation matrix
+corr_mat <- round(cor(data_wo_date),2)
+ 
+# reduce the size of correlation matrix
+melted_corr_mat <- melt(corr_mat)
+head(melted_corr_mat)
+ 
+# plotting the correlation heatmap
+ggplot(data = melted_corr_mat, aes(x=Var1, y=Var2, 
+                                   fill=value)) + 
+  labs(title = "Correlation Heatmap") +
+  geom_tile() +
+  geom_text(aes(Var2, Var1, label = value), 
+          color = "white", size = 8)
+```
+```{r}
+boxplot_stats <- function(df) {
+  numeric_cols <- names(df)[sapply(df, is.numeric)]
+  
+  for (col in numeric_cols) {
+    outliers <- boxplot.stats(df[[col]])$out
+    print(paste("Outliers in", col, ":", paste(outliers, collapse = ", ")))
+  }
+}
+
+boxplot_stats(data_ch4)  # Replace with your dataframe name
+```
+
+```{r}
+remove_outliers <- function(df) {
+  numeric_cols <- names(df)[sapply(df, is.numeric)]
+  
+  for (col in numeric_cols) {
+    Q1 <- quantile(df[[col]], 0.25, na.rm = TRUE)
+    Q3 <- quantile(df[[col]], 0.75, na.rm = TRUE)
+    IQR <- Q3 - Q1
+    lower_bound <- Q1 - 1.5 * IQR
+    upper_bound <- Q3 + 1.5 * IQR
+    df <- df[df[[col]] >= lower_bound & df[[col]] <= upper_bound, ]
+  }
+  
+  return(df)
+}
+
+data_ch4_clean <- remove_outliers(data_ch4)  # New dataframe without outliers
+
+```
+
+```{r}
+winsorize <- function(df) {
+  numeric_cols <- names(df)[sapply(df, is.numeric)]
+  
+  for (col in numeric_cols) {
+    Q1 <- quantile(df[[col]], 0.25, na.rm = TRUE)
+    Q3 <- quantile(df[[col]], 0.75, na.rm = TRUE)
+    IQR <- Q3 - Q1
+    lower_bound <- Q1 - 1.5 * IQR
+    upper_bound <- Q3 + 1.5 * IQR
+    
+    df[[col]] <- ifelse(df[[col]] < lower_bound, lower_bound,
+                        ifelse(df[[col]] > upper_bound, upper_bound, df[[col]]))
+  }
+  
+  return(df)
+}
+
+data_ch4_winsorized <- winsorize(data_ch4)  # Capped outliers
+
+```
+
+```{r}
+# Load required library
+library(ggplot2)
+
+# Function to plot boxplots for each numeric column
+plot_boxplots <- function(df, title_suffix = "") {
+  numeric_cols <- names(df)[sapply(df, is.numeric)]
+  
+  for (col in numeric_cols) {
+    print(
+      ggplot(df, aes(y = .data[[col]])) +
+        geom_boxplot(fill = "lightblue", color = "black", outlier.color = "red", outlier.shape = 16) +
+        labs(title = paste("Boxplot of", col, title_suffix),
+             y = col) +
+        theme_minimal()
+    )
+  }
+}
+
+# Boxplots after removing outliers
+plot_boxplots(data_ch4_clean, "(After Removing Outliers)")
+
+# Boxplots after Winsorization
+plot_boxplots(data_ch4_winsorized, "(After Winsorization)")
+
+```
+
