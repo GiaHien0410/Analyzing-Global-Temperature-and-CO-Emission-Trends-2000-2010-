@@ -73,23 +73,8 @@ data_wo_date = data_ch4[, num_col]
 summary(data_ch4)
 ```
 
-```{r}
-# Mean for each numeric column
-cat("\nMean for each numeric column\n")
-colMeans(data_wo_date[, sapply(data_wo_date, is.numeric)], na.rm = TRUE)
+Mean, Median, Standard Deviation, Min, Max, Quantiles, Variance for each numerical value (not counting year and month)
 
-# Standard deviation for each numeric column
-cat("\nStandard deviation for each numeric column\n")
-sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], sd, na.rm = TRUE)
-
-# Median for each numeric column
-cat("\nMedian for each numeric column\n")
-sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], median, na.rm = TRUE)
-
-# Min and max values
-cat("\nMin and Max of each numeric column\n")
-sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], range, na.rm = TRUE)
-```
 ```{r}
 cal_sum_stat = function(df){
   num_col = c("average_ch4", "trend_ch4", "Anomaly")
@@ -263,6 +248,8 @@ boxplot_stats <- function(df) {
 boxplot_stats(data_ch4)  # Replace with your dataframe name
 ```
 
+- Trimming: remove outliers
+
 ```{r}
 remove_outliers <- function(df) {
   numeric_cols <- names(df)[sapply(df, is.numeric)]
@@ -282,8 +269,11 @@ remove_outliers <- function(df) {
 data_ch4_clean <- remove_outliers(data_wo_date)  # New dataframe without outliers
 ```
 
-- Trimming: remove outliers
-
+- Windsorization: 
+  - Statistical method used to limit the impact of extreme values/outliers, in a dataset. Instead of removing outliers entirely, it replaces them with values closer to the center of the distribution.
+  - Specifically, extreme values are set to a specified percentile of the data. This effectively "caps" or "floors" the extreme values
+  - E.g., Determine a specific percentile (25th and 75th). Any value lower or upper percentile is replaced by the value of that percentile.
+  
 ```{r}
 winsorize <- function(df) {
   numeric_cols <- names(df)[sapply(df, is.numeric)]
@@ -304,10 +294,6 @@ winsorize <- function(df) {
 data_ch4_winsorized <- winsorize(data_wo_date)  # Capped outliers
 ```
 
-- Windsorization: 
-  - Statistical method used to limit the impact of extreme values/outliers, in a dataset. Instead of removing outliers entirely, it replaces them with values closer to the center of the distribution.
-  - Specifically, extreme values are set to a specified percentile of the data. This effectively "caps" or "floors" the extreme values
-  - E.g., Determine a specific percentile (25th and 75th). Any value lower or upper percentile is replaced by the value of that percentile.
 
 ```{r}
 # Load required library

@@ -575,35 +575,8 @@ summary(data_ch4)</code></pre>
 ##  Mean   :2005   Mean   : 6.50   Mean   :1780   Mean   :1780   Mean   :0.6089  
 ##  3rd Qu.:2008   3rd Qu.: 9.25   3rd Qu.:1786   3rd Qu.:1786   3rd Qu.:0.6900  
 ##  Max.   :2010   Max.   :12.00   Max.   :1807   Max.   :1801   Max.   :0.9100</code></pre>
-<pre class="r"><code># Mean for each numeric column
-cat(&quot;\nMean for each numeric column\n&quot;)</code></pre>
-<pre><code>## 
-## Mean for each numeric column</code></pre>
-<pre class="r"><code>colMeans(data_wo_date[, sapply(data_wo_date, is.numeric)], na.rm = TRUE)</code></pre>
-<pre><code>##  average_ch4    trend_ch4      Anomaly 
-## 1780.1740152 1780.0924242    0.6088636</code></pre>
-<pre class="r"><code># Standard deviation for each numeric column
-cat(&quot;\nStandard deviation for each numeric column\n&quot;)</code></pre>
-<pre><code>## 
-## Standard deviation for each numeric column</code></pre>
-<pre class="r"><code>sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], sd, na.rm = TRUE)</code></pre>
-<pre><code>## average_ch4   trend_ch4     Anomaly 
-##  10.0472987   8.8186229   0.1246163</code></pre>
-<pre class="r"><code># Median for each numeric column
-cat(&quot;\nMedian for each numeric column\n&quot;)</code></pre>
-<pre><code>## 
-## Median for each numeric column</code></pre>
-<pre class="r"><code>sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], median, na.rm = TRUE)</code></pre>
-<pre><code>## average_ch4   trend_ch4     Anomaly 
-##    1777.985    1776.135       0.620</code></pre>
-<pre class="r"><code># Min and max values
-cat(&quot;\nMin and Max of each numeric column\n&quot;)</code></pre>
-<pre><code>## 
-## Min and Max of each numeric column</code></pre>
-<pre class="r"><code>sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], range, na.rm = TRUE)</code></pre>
-<pre><code>##      average_ch4 trend_ch4 Anomaly
-## [1,]     1763.02   1771.09    0.28
-## [2,]     1807.00   1800.63    0.91</code></pre>
+<p>Mean, Median, Standard Deviation, Min, Max, Quantiles, Variance for
+each numerical value (not counting year and month)</p>
 <pre class="r"><code>cal_sum_stat = function(df){
   num_col = c(&quot;average_ch4&quot;, &quot;trend_ch4&quot;, &quot;Anomaly&quot;)
   data_wo_date = data_ch4[, num_col]
@@ -791,6 +764,9 @@ boxplot_stats(data_ch4)  # Replace with your dataframe name</code></pre>
 ## [1] &quot;Outliers in average_ch4 : 1806.6, 1807&quot;
 ## [1] &quot;Outliers in trend_ch4 : &quot;
 ## [1] &quot;Outliers in Anomaly : 0.31, 0.31, 0.3, 0.29, 0.28&quot;</code></pre>
+<ul>
+<li>Trimming: remove outliers</li>
+</ul>
 <pre class="r"><code>remove_outliers &lt;- function(df) {
   numeric_cols &lt;- names(df)[sapply(df, is.numeric)]
   
@@ -808,7 +784,17 @@ boxplot_stats(data_ch4)  # Replace with your dataframe name</code></pre>
 
 data_ch4_clean &lt;- remove_outliers(data_wo_date)  # New dataframe without outliers</code></pre>
 <ul>
-<li>Trimming: remove outliers</li>
+<li>Windsorization:
+<ul>
+<li>Statistical method used to limit the impact of extreme
+values/outliers, in a dataset. Instead of removing outliers entirely, it
+replaces them with values closer to the center of the distribution.</li>
+<li>Specifically, extreme values are set to a specified percentile of
+the data. This effectively “caps” or “floors” the extreme values</li>
+<li>E.g., Determine a specific percentile (25th and 75th). Any value
+lower or upper percentile is replaced by the value of that
+percentile.</li>
+</ul></li>
 </ul>
 <pre class="r"><code>winsorize &lt;- function(df) {
   numeric_cols &lt;- names(df)[sapply(df, is.numeric)]
@@ -827,19 +813,6 @@ data_ch4_clean &lt;- remove_outliers(data_wo_date)  # New dataframe without outl
   return(df)
 }
 data_ch4_winsorized &lt;- winsorize(data_wo_date)  # Capped outliers</code></pre>
-<ul>
-<li>Windsorization:
-<ul>
-<li>Statistical method used to limit the impact of extreme
-values/outliers, in a dataset. Instead of removing outliers entirely, it
-replaces them with values closer to the center of the distribution.</li>
-<li>Specifically, extreme values are set to a specified percentile of
-the data. This effectively “caps” or “floors” the extreme values</li>
-<li>E.g., Determine a specific percentile (25th and 75th). Any value
-lower or upper percentile is replaced by the value of that
-percentile.</li>
-</ul></li>
-</ul>
 <pre class="r"><code># Load required library
 library(ggplot2)
 
