@@ -1,0 +1,81 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-03-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+```
+
+```{r}
+df_anomaly = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\anomaly_2000_2010.csv")
+df_ch4 = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\ch4_2000_2010.csv")
+df_co2 = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\co2_2000_2010.csv")
+```
+
+
+```{r}
+# Convert to monthly time series starting Jan 2000
+ch4_ts = ts(df_ch4$average, 
+             start = c(2000, 1), 
+             frequency = 12)
+```
+
+```{r}
+ # Perform additive decomposition
+ ch4_decomposed = decompose(ch4_ts, type = "additive")
+ 
+ # Plot components
+ plot(ch4_decomposed)
+```
+
+```{r}
+# Extract components
+components = data.frame(
+   Date = seq.Date(from = as.Date("2000-01-01"), 
+                   by = "month", 
+                   length.out = length(ch4_ts)),
+   Observed = ch4_decomposed$x,
+   Trend = ch4_decomposed$trend,
+   Seasonal = ch4_decomposed$seasonal,
+   Random = ch4_decomposed$random
+ )
+ 
+ # Plot observed vs decomposed trend
+ ggplot(components, aes(x = Date)) +
+   geom_line(aes(y = Observed, color = "Observed")) +
+   geom_line(aes(y = Trend, color = "Decomposed Trend"), na.rm = TRUE) +
+   labs(title = "CH4 Levels: Observed vs Decomposed Trend",
+        y = "CH4 (ppm)",
+        color = "Legend") +
+   theme_minimal()
+```
