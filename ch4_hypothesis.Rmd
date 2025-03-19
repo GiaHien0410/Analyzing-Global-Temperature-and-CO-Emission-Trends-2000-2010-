@@ -1,0 +1,162 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-03-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(Kendall)
+```
+Objective:
+To analyze the relationship between global CO₂ concentrations and global temperature anomalies from 2000 to 2010, identifying potential correlations and trends. The study aims to determine whether rising CO₂ levels correspond to an increase in global temperatures, providing insights into climate change patterns.
+
+Hypothesis:
+Null Hypothesis (H₀): There is no significant correlation between global CO₂ concentrations and global temperature anomalies from 2000 to 2010.
+Alternative Hypothesis (H₁): There is a significant positive correlation between global CO₂ concentrations and global temperature anomalies from 2000 to 2010, indicating that rising CO₂ levels contribute to temperature increases.
+```{r}
+df_anomaly = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\anomaly_2000_2010.csv")
+df_ch4 = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\ch4_2000_2010.csv")
+df_co2 = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\co2_2000_2010.csv")
+```
+
+```{r}
+head(df_anomaly)
+head(df_ch4)
+```
+```{r}
+names(df_ch4)[names(df_ch4) == "average"] = "average_ch4"
+names(df_ch4)[names(df_ch4) == "trend"] = "trend_ch4"
+```
+
+
+
+```{r}
+data_ch4 = merge(df_ch4, df_anomaly, by = c("Year", "Month"), all.x = TRUE)
+data_ch4 <- data_ch4[order(data_ch4$Year, data_ch4$Month), ]
+```
+
+```{r}
+data_ch4$Date = as.Date(paste(data_ch4$Year, data_ch4$Month, "01", sep = "-"))
+```
+
+```{r}
+print(data_ch4, row.names = FALSE)
+```
+
+```{r}
+# Plot the time series of the 'average' and 'trend' columns
+ggplot(data_ch4, aes(x = Date)) +
+  geom_line(aes(y = average_ch4, color = "Average")) +
+  geom_line(aes(y = trend_ch4, color = "Trend")) +
+  labs(title = "Time Series of Average and Trend",
+       x = "Date",
+       y = "Value",
+       color = "Legend") +
+  theme_minimal()
+```
+```{r}
+# Perform a paired t-test
+t_test_result <- t.test(data_ch4$average_ch4, data_ch4$trend_ch4, paired = FALSE)
+print(t_test_result)
+```
+```{r}
+# Convert to a time series object
+ts_ch4 <- ts(data_ch4$average, frequency = 12, start = c(2000, 1))
+
+# Decompose the time series
+decomposed <- decompose(ts_ch4)
+plot(decomposed)
+```
+```{r}
+# Load the 'tseries' library for ADF test
+library(tseries)
+
+# Perform ADF test
+adf_test_result <- adf.test(data_ch4$average_ch4)
+print(adf_test_result)
+```
+
+```{r}
+# Create a time index (since Year and Month together represent time progression)
+data_ch4$Time_Index <- 1:nrow(df_ch4)
+```
+
+```{r}
+# Perform Linear Regression (CH4 Trend vs. Time)
+linear_model <- lm(trend_ch4 ~ Time_Index, data = data_ch4)
+summary(linear_model)  # Check regression results
+
+# Perform Mann-Kendall Test (for trend detection)
+mk_test <- MannKendall(data_ch4$trend_ch4)
+print(mk_test)  # Check if the trend is significant
+```
+
+```{r}
+shapiro.test((data_ch4$average_ch4))
+```
+p-value < 0.05 => data is not normal
+
+```{r}
+library(car)
+leveneTest(trend_ch4 ~ Date, data = data_ch4)  # Tests variance homogeneity
+```
+```{r}
+t_test <- t.test(average_ch4 ~ Year, data = subset(data_ch4, Year %in% c(2000, 2010)))
+t_test
+```
+
+```{r}
+anova_model <- aov(average_ch4 ~ as.factor(Year), data = data_ch4)
+summary(anova_model)
+
+```
+```{r}
+cor.test(data_ch4$average_ch4, data_ch4$Anomaly, method = "pearson")
+```
+```{r}
+# Simulating null distribution (t-distribution)
+x <- seq(-4, 4, length=100)
+y <- dt(x, df = t_test$parameter)  # Null distribution
+
+# Plot null distribution
+plot(x, y, type = "l", main = "Null Distribution (t-test)", xlab = "t-values", ylab = "Density")
+abline(v = t_test$statistic, col = "red", lwd = 2)  # Observed test statistic
+legend("topright", legend = "Observed t-statistic", col = "red", lwd = 2)
+```
+
+Correlation Between CH₄ & Anomaly
+
+```{r}
+cor.test(data_ch4$average_ch4, data_ch4$Anomaly, method = "pearson")  # Linear
+cor.test(data_ch4$average_ch4, data_ch4$Anomaly, method = "spearman")  # Rank-based
+```
+
+

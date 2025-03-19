@@ -15,12 +15,7 @@ library(dplyr)
 library(ggplot2)
 library(reshape2)
 ```
-Objective:
-To analyze the relationship between global CO₂ concentrations and global temperature anomalies from 2000 to 2010, identifying potential correlations and trends. The study aims to determine whether rising CO₂ levels correspond to an increase in global temperatures, providing insights into climate change patterns.
 
-Hypothesis:
-Null Hypothesis (H₀): There is no significant correlation between global CO₂ concentrations and global temperature anomalies from 2000 to 2010.
-Alternative Hypothesis (H₁): There is a significant positive correlation between global CO₂ concentrations and global temperature anomalies from 2000 to 2010, indicating that rising CO₂ levels contribute to temperature increases.
 ```{r}
 df_anomaly = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\anomaly_2000_2010.csv")
 df_ch4 = read.csv("D:\\DS-B3\\Spatial\\Analyzing-Global-Temperature-and-CO-Emission-Trends-2000-2010-\\dataset\\ch4_2000_2010.csv")
@@ -35,34 +30,11 @@ head(df_ch4)
 ```{r}
 colnames(df_ch4)
 ```
-EDA:
-Step 1: Understand the Problem and the Data
-Step 2: Import and Inspect the Data
-Step 3: Handling Missing Values
-Step 4: Explore Data Characteristics
-Step 5: Perform Data Transformation
-Step 6: Visualize Data Relationships
-Step 7: Handling Outliers
-Step 8: Communicate Findings and Insights
 ```{r}
 names(df_ch4)[names(df_ch4) == "average"] = "average_ch4"
 names(df_ch4)[names(df_ch4) == "trend"] = "trend_ch4"
 ```
-Topic:
-Investigating the Impact of CO₂ and CH₄ Emissions on Global Temperature Anomalies (2000-2010)
 
-Objective:
-This study aims to explore the relationship between global temperature anomalies and greenhouse gas emissions (CO₂ and CH₄) over the period 2000-2010. By analyzing monthly trends, we seek to determine whether increases in atmospheric CO₂ and CH₄ concentrations correspond to significant temperature changes. The study will use statistical correlation and trend analysis to assess the strength and direction of these relationships.
-
-Hypotheses:
-H₀ (Null Hypothesis):
-
-There is no significant relationship between global temperature anomalies and the concentration of CO₂ and CH₄ from 2000 to 2010.
-Greenhouse gas concentrations do not have a measurable impact on global temperature variations over the studied period.
-H₁ (Alternative Hypothesis):
-
-There is a statistically significant positive correlation between CO₂ and CH₄ concentrations and global temperature anomalies.
-Rising levels of these greenhouse gases contribute to an increase in temperature anomalies over time.
 ```{r}
 summary(df_ch4)
 ```
@@ -83,8 +55,13 @@ print(data_ch4, row.names = FALSE)
 cat("Dimension of data:", dim(data_ch4))
 cat("\nNumber of N/A values", sum(is.na(data_ch4)))
 ```
+=> Dataset has no missing values
 
-## Explore Data Characteristics
+## Step 4: Explore Data Characteristics
+
+```{r}
+str(data_ch4)
+```
 
 ```{r}
 num_col = c("average_ch4", "trend_ch4", "Anomaly")
@@ -99,19 +76,19 @@ summary(data_ch4)
 ```{r}
 # Mean for each numeric column
 cat("\nMean for each numeric column\n")
-colMeans(data_ch4[, sapply(data_ch4, is.numeric)], na.rm = TRUE)
+colMeans(data_wo_date[, sapply(data_wo_date, is.numeric)], na.rm = TRUE)
 
 # Standard deviation for each numeric column
 cat("\nStandard deviation for each numeric column\n")
-sapply(data_ch4[, sapply(data_ch4, is.numeric)], sd, na.rm = TRUE)
+sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], sd, na.rm = TRUE)
 
 # Median for each numeric column
 cat("\nMedian for each numeric column\n")
-sapply(data_ch4[, sapply(data_ch4, is.numeric)], median, na.rm = TRUE)
+sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], median, na.rm = TRUE)
 
 # Min and max values
 cat("\nMin and Max of each numeric column\n")
-sapply(data_ch4[, sapply(data_ch4, is.numeric)], range, na.rm = TRUE)
+sapply(data_wo_date[, sapply(data_wo_date, is.numeric)], range, na.rm = TRUE)
 ```
 ```{r}
 cal_sum_stat = function(df){
@@ -131,7 +108,7 @@ cal_sum_stat = function(df){
 result = cal_sum_stat(data_ch4)
 print(result)
 ```
-ok 
+ 
 ```{r}
 #data %>%
 #  group_by(Year) %>%
@@ -144,7 +121,7 @@ ok
 
 ```
 
-## Visualize Data Relationships
+## Step 6: Visualize Data Relationships
 
 ### Univariate Analysis
 
@@ -171,13 +148,12 @@ for (col in num_cols) {
   
   print(p)  # Display each plot separately
 }
-
 ```
 ```{r}
 # Loop through each column and generate a line plot
 for (col in num_cols) {
   p <- ggplot(data_ch4, aes(x = Year + (Month - 1) / 12, y = .data[[col]])) +
-    geom_line(color = "blue", size = 1) +
+    geom_line(color = "blue", linewidth = 1) +
     labs(title = paste("Line Plot of", col, "Over Time"),
          x = "Year",
          y = col) +
@@ -194,7 +170,7 @@ plot_hist_kde <- function(df) {
   for (col in numeric_cols) {
     p <- ggplot(df, aes(x = .data[[col]])) +
       geom_histogram(aes(y = ..density..), bins = 30, fill = "blue", alpha = 0.5) +  # Histogram
-      geom_density(color = "red", size = 1.2) +  # KDE (Kernel Density Estimate)
+      geom_density(color = "red", linewidth = 1.2) +  # KDE (Kernel Density Estimate)
       labs(title = paste("Histogram & KDE of", col), x = col, y = "Density") +
       theme_minimal()
     
@@ -221,7 +197,6 @@ ggplot(data_ch4, aes(x = Year + (Month - 1) / 12)) +  # Convert Year and Month i
        y = "CH4 Levels",
        color = "Legend") +
   theme_minimal()
-
 ```
 ```{r}
 ggplot(data_ch4, aes(x = average_ch4, y = Anomaly)) +
@@ -231,7 +206,6 @@ ggplot(data_ch4, aes(x = average_ch4, y = Anomaly)) +
        x = "Average CH4 Levels",
        y = "Anomaly") +
   theme_minimal()
-
 ```
 ```{r}
 ggplot(data_ch4, aes(x = average_ch4, y = Anomaly)) +
@@ -273,6 +247,9 @@ ggplot(data = melted_corr_mat, aes(x=Var1, y=Var2,
   geom_text(aes(Var2, Var1, label = value), 
           color = "white", size = 8)
 ```
+
+## Handling Outliers
+
 ```{r}
 boxplot_stats <- function(df) {
   numeric_cols <- names(df)[sapply(df, is.numeric)]
@@ -302,9 +279,10 @@ remove_outliers <- function(df) {
   return(df)
 }
 
-data_ch4_clean <- remove_outliers(data_ch4)  # New dataframe without outliers
-
+data_ch4_clean <- remove_outliers(data_wo_date)  # New dataframe without outliers
 ```
+
+- Trimming: remove outliers
 
 ```{r}
 winsorize <- function(df) {
@@ -323,10 +301,13 @@ winsorize <- function(df) {
   
   return(df)
 }
-
-data_ch4_winsorized <- winsorize(data_ch4)  # Capped outliers
-
+data_ch4_winsorized <- winsorize(data_wo_date)  # Capped outliers
 ```
+
+- Windsorization: 
+  - Statistical method used to limit the impact of extreme values/outliers, in a dataset. Instead of removing outliers entirely, it replaces them with values closer to the center of the distribution.
+  - Specifically, extreme values are set to a specified percentile of the data. This effectively "caps" or "floors" the extreme values
+  - E.g., Determine a specific percentile (25th and 75th). Any value lower or upper percentile is replaced by the value of that percentile.
 
 ```{r}
 # Load required library
