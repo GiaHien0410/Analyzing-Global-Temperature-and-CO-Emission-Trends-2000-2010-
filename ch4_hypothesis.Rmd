@@ -95,6 +95,9 @@ ts_ch4 <- ts(data_ch4$average, frequency = 12, start = c(2000, 1))
 decomposed <- decompose(ts_ch4)
 plot(decomposed)
 ```
+
+### ADF Test
+
 ```{r}
 # Load the 'tseries' library for ADF test
 library(tseries)
@@ -104,34 +107,91 @@ adf_test_result <- adf.test(data_ch4$average_ch4)
 print(adf_test_result)
 ```
 
+- Dickey-Fuller Test Statistic
+  - Test statistic = -3.5241
+  - The more negative this value is, the stronger the evidence for stationarity.
+- Lag Order = 5
+  - This indicates that the test used 5 lagged values in the regression model.
+- p-value = 0.04291
+  - Since p < 0.05, we reject the null hypothesis (H₀) at the 5% significance level, meaning that the time series is likely stationary.
+- Conclusion
+  - The methane (CH₄) data appears to be stationary, meaning that its mean and variance do not change significantly over time.
+  - If the p-value were greater than 0.05, it would suggest non-stationarity, and we might need to apply transformations (e.g., differencing, detrending) to make it stationary before performing time series modeling (e.g., ARIMA).
+
+
 ```{r}
 # Create a time index (since Year and Month together represent time progression)
 data_ch4$Time_Index <- 1:nrow(df_ch4)
 ```
 
+### Linear Regression Analysis
+
 ```{r}
 # Perform Linear Regression (CH4 Trend vs. Time)
 linear_model <- lm(trend_ch4 ~ Time_Index, data = data_ch4)
 summary(linear_model)  # Check regression results
+```
 
+- Formula: trend_ch4 ~ Time_Index
+  - This models methane trends (trend_ch4) as a function of time (Time_Index).
+- Intercept (1.767e+03 ≈ 1767)
+  - This represents the estimated CH₄ level at Time_Index = 0.
+- Time_Index Coefficient (2.018e-01 ≈ 0.2018)
+  - This means that methane levels increase by approximately 0.2018 units per time step.
+  - The t-value = 20.62 and p-value < 2.2e-16, which indicate that the trend is statistically highly significant.
+- R-squared = 0.7658 (76.6%)
+  - About 76.6% of the variation in methane levels is explained by time, meaning the model fits the data well.
+- F-statistic = 425, p-value < 2.2e-16
+  - The overall regression model is statistically significant.
+
+### Mann-Kendall Test (Non-Parametric Trend Test)
+
+```{r}
 # Perform Mann-Kendall Test (for trend detection)
 mk_test <- MannKendall(data_ch4$trend_ch4)
 print(mk_test)  # Check if the trend is significant
 ```
 
+- Tau (τ) = 0.737
+  - This represents the strength of the trend. A positive τ value close to 1 suggests a strong increasing trend.
+- p-value ≤ 2.22e-16
+  - This means the detected trend is highly significant, confirming a strong increasing pattern in methane levels over time.
+
+### Shapiro-Wilk test (null => normally distributed, alternative => not normally distributed)
+
 ```{r}
 shapiro.test((data_ch4$average_ch4))
 ```
-p-value < 0.05 => data is not normal
+- Test Statistic (W-value)
+  - The W-value = 0.94371.
+  - A value closer to 1 suggests a normal distribution, while a lower value suggests deviation from normality.
+- p-value
+  - p-value = 3.356 × 10⁻⁵ (0.00003356)
+  - Since p < 0.05, we reject the null hypothesis (H₀), meaning that the data does not follow a normal distribution.
+
+- Conclusion
+  - The Shapiro-Wilk test suggests that the CH₄ (methane) data is not normally distributed.
+  - If you plan to apply statistical tests that assume normality (e.g., t-tests, ANOVA, Pearson correlation), you might need to transform the data (log/square root transformation) or use non-parametric tests (e.g., Mann-Whitney U test, Spearman correlation).
 
 ```{r}
 library(car)
 leveneTest(trend_ch4 ~ Date, data = data_ch4)  # Tests variance homogeneity
 ```
+
+### Welch Two Sample t test
+
 ```{r}
 t_test <- t.test(average_ch4 ~ Year, data = subset(data_ch4, Year %in% c(2000, 2010)))
 t_test
 ```
+
+- Test Statistic (t-value): t-value = -12.344, indicating a large difference between the two groups
+- Degrees of Freedom (df): df = 21.826, meaning the test used Welch's t-test, which does not assume equal variances
+- p-value = 2.566x10^-11, very small(< 0.05) => reject null hypothesis => statistically significant
+- Confidence Interval (95% CI) = (-30.06145, -21.41022). Since 0 is not in the interval, it further supports that there is a significant difference
+- Mean CH4 Levels in Each Years: an increase in methane levels over the decade
+
+### ANOVA Model
 
 ```{r}
 anova_model <- aov(average_ch4 ~ as.factor(Year), data = data_ch4)
@@ -141,16 +201,6 @@ summary(anova_model)
 ```{r}
 cor.test(data_ch4$average_ch4, data_ch4$Anomaly, method = "pearson")
 ```
-```{r}
-# Simulating null distribution (t-distribution)
-x <- seq(-4, 4, length=100)
-y <- dt(x, df = t_test$parameter)  # Null distribution
-
-# Plot null distribution
-plot(x, y, type = "l", main = "Null Distribution (t-test)", xlab = "t-values", ylab = "Density")
-abline(v = t_test$statistic, col = "red", lwd = 2)  # Observed test statistic
-legend("topright", legend = "Observed t-statistic", col = "red", lwd = 2)
-```
 
 Correlation Between CH₄ & Anomaly
 
@@ -159,4 +209,15 @@ cor.test(data_ch4$average_ch4, data_ch4$Anomaly, method = "pearson")  # Linear
 cor.test(data_ch4$average_ch4, data_ch4$Anomaly, method = "spearman")  # Rank-based
 ```
 
+Pearson:
+- cor = 0.3485 => moderate positive correlation
+- p-value = 4.219x10^-5, very small => correlation is statistically significant
+- 95% confidence interval is (0.1889, 0.4909), suggesting the true correlation lies within this range
 
+Spearman's Rank Correlation (Nonlinear, Rank-Based)
+- The Spearman correlation coefficient (rho) is 0.3781, also suggesting a moderate positive correlation.
+- The p-value is 7.812 × 10⁻⁶, meaning the correlation is statistically significant.
+- There is a warning about ties, which means some values in the dataset are repeated, and an exact p-value couldn't be computed, but an approximation was used.
+
+=> Pearson test suggests a linear relationship, while Spearman's test suggests a monotonic relationship, which may handle nonlinear trends better
+=> Both tests give similar results, it confirms a statistically significant association between CH4 and Anomaly values.

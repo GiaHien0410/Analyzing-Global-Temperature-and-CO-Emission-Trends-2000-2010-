@@ -58,6 +58,11 @@ ch4_ts = ts(df_ch4$average,
  plot(ch4_decomposed)
 ```
 
+From the decomposition plot:
+- The time series exhibits a clear increasing trend over time.
+- There is a strong seasonal pattern, meaning that certain fluctuations repeat at regular intervals.
+- The random component contains some nouse but does not dominate the overall structure.
+
 ```{r}
 # Extract components
 components = data.frame(

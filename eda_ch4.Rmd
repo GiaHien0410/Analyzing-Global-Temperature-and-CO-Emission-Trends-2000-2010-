@@ -192,6 +192,12 @@ ggplot(data_ch4, aes(x = average_ch4, y = Anomaly)) +
        y = "Anomaly") +
   theme_minimal()
 ```
+
+From the Scatter Plot of CH4 vs Anomaly:
+- The plot suggests that higher methane levels are associated with higher anomaly values.
+- The spread of blue dots around the red line indicates some variability, meaning that while there is a trend, the relationship is not perfectly linear.
+- The confidence interval (gray region) shows the possible range of the regression line, which helps understand the uncertainty in the relationship.
+
 ```{r}
 ggplot(data_ch4, aes(x = average_ch4, y = Anomaly)) +
   geom_hex(bins = 30) +  # Hexbin plot for density visualization
