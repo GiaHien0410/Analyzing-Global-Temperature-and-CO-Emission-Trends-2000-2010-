@@ -296,5 +296,7 @@ Overall Implication: The results indicate that as CH₄ levels rise, there are l
 ```
 Conclusion
 ```
-The analysis highlights a clear link between methane emissions and rising global temperatures. Understanding this relationship is crucial for developing effective strategies to reduce greenhouse gas emissions and combat climate change.
+Results Supporting H₁: The analysis revealed a statistically significant positive correlation between both CO₂ and CH₄ concentrations and global temperature anomalies. The copula analysis demonstrated a moderate dependence between these variables, indicating that as the levels of CO₂ and CH₄ increase, the temperature anomalies also tend to rise.
+Rejection of H₀: Given the strong evidence gathered from the analysis—including the fitting of appropriate marginal distributions and the relationship established through copula modeling—we reject the null hypothesis (H₀). This supports the alternative hypothesis (H₁), affirming that greenhouse gas concentrations do have a measurable impact on global temperature variations.
+Implications for Climate Policy: The findings underscore the importance of monitoring and managing emissions of both CO₂ and CH₄ as critical factors in addressing climate change. Effective strategies to reduce these emissions are crucial for mitigating global warming and its associated impacts.
 ```
